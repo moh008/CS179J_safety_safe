@@ -39,8 +39,12 @@ void loop(){
   {
     lcd.clear();
     lcd.print("Time accessed");
-    lcd.setCursor(0, 1);
+    lcd.print(EEPROM.read(0)/3600);
+    lcd.print("Hr ");
+    lcd.print(EEPROM.read(0)/60);
+    lcd.print("Min ");
     lcd.print(EEPROM.read(0));
+    lcd.print("Sec");
     
     delay(2000);
     
