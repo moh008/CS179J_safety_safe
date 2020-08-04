@@ -51,6 +51,7 @@ void Lights_SM () {
         digitalWrite(LED_PIN, HIGH);
         t0_Lights = millis();
         lock = 0;
+        timeout = 0;
       }
       else {
         lightSM_state = lights_off;
@@ -65,6 +66,7 @@ void Lights_SM () {
       if (t1_Lights - t0_Lights >= periodLights) {
         lightSM_state = lights_off;
         digitalWrite(LED_PIN, LOW);
+        timeout = 1;
         boxlight = 0;
       }
       else {
@@ -78,6 +80,7 @@ void Lights_SM () {
         digitalWrite(LED_PIN, HIGH);
         t0_Lights = millis();
         lock = 0;
+        timeout = 0;
       }
       else {
         lightSM_state = lights_off;
@@ -87,7 +90,6 @@ void Lights_SM () {
   
   switch (lightSM_state) { // actions
     case lights_start:
-      lock = 0;
       break;
     
     case lights_on:
