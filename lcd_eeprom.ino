@@ -43,7 +43,7 @@ void loop(){
     lcd.print("Hr ");
     lcd.print(EEPROM.read(0)/60);
     lcd.print("Min ");
-    lcd.print(EEPROM.read(0));
+    lcd.print(EEPROM.read(0)%60);
     lcd.print("Sec");
     
     delay(2000);
