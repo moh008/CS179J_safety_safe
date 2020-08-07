@@ -4,11 +4,14 @@
 #include <MFRC522.h>
 #include <Servo.h>
 #include <LiquidCrystal.h>
+#include <EEPROM.h>
  
 #define SS_PIN 10
 #define RST_PIN 9
 #define LED A4 //define LED
 #define BUZZER A5 //buzzer pin
+#define accessPin  A2
+#define recordPin  A3
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 Servo Servo; //define servo name
 LiquidCrystal lcd(8, 2, 4, 5, 6, 7); // LCD screen, 8 = rs and 2 = EN
@@ -17,7 +20,11 @@ LiquidCrystal lcd(8, 2, 4, 5, 6, 7); // LCD screen, 8 = rs and 2 = EN
 int openClose = 0;
 unsigned long timeoutStart = 0;
 unsigned long timeout = 0;
+enum SwitchModes {PULLUP, PULLDOWN};
+SwitchModes switchMode = PULLUP;
+byte timestamp;
 
+// Setup for main module
 void setup() 
 {
   lcd.begin(16,2);
@@ -30,16 +37,30 @@ void setup()
   pinMode(BUZZER, OUTPUT);
   noTone(BUZZER);
 
-  //Displays
+  //Debugg
   Serial.println("Put your card to the reader...");
   Serial.println();
-
-  lcd.setCursor(0,0);
-  lcd.print("Welcome!");
-  delay(100);
-
   
+  //EEPROM
+  if (switchMode == PULLDOWN)
+  {
+    pinMode(accessPin, INPUT);
+    pinMode(recordPin, INPUT);
+  }
+  else
+  {
+    pinMode(accessPin, INPUT_PULLUP);
+    pinMode(recordPin, INPUT_PULLUP);
+  }
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.print("Press button");
+  lcd.setCursor(0, 1);
+  lcd.print("Access | Record");
 }
+
+//Main / Light Module
 void loop() 
 {
   lcd.clear();
@@ -53,22 +74,104 @@ void loop()
   }
   else
   {
-    if(timeout >= (timeoutStart + 5000))
+    if(timeout >= (timeoutStart + 30000))
     {
       lcd.print("Close Safe");
-      tone(BUZZER, 200);
-      delay(300);
-      noTone(BUZZER);
+      timeoutSound();
     }
     else
     {
-      lcd.print("Last Accessed:");
+      eeprom();
     }
     digitalWrite(LED, HIGH);
   }
   delay(200);
- 
-  
+
+ RFID();
+} 
+
+//Buzzer Functions Module
+void validSound()
+{
+  delay(500);
+  tone(BUZZER, 500);
+  delay(300);
+  noTone(BUZZER);
+
+  tone(BUZZER, 550);
+  delay(300);
+  noTone(BUZZER);
+}
+
+void invalidSound()
+{
+  tone(BUZZER, 300);
+  delay(300);
+  noTone(BUZZER);
+
+  tone(BUZZER, 200);
+  delay(300);
+  noTone(BUZZER);
+}
+
+void timeoutSound()
+{
+  tone(BUZZER, 200);
+  delay(300);
+  noTone(BUZZER);
+}
+
+//Servo Functions Module
+void servoOpen()
+{
+  Servo.write(180);
+}
+
+void servoClose()
+{
+  Servo.write(0);
+}
+
+//LCD Functions Module
+void lcdOpen()
+{
+  openClose = 1;
+  Serial.println("Access Granted");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Access Granted");
+}
+
+void lcdClose()
+{
+  openClose = 0;
+  Serial.println("Locking");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Locking");
+  delay(1000);
+}
+
+void lcdLocked()
+{
+  Serial.println("Locked");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Locked");
+  delay(1000);
+}
+
+void lcdInvalid()
+{
+  Serial.println("No Access");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Access Denied");
+}
+
+//RFID Function Module
+void RFID()
+{
   // Look for new cards
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
   {
@@ -80,8 +183,7 @@ void loop()
     return;
   }
 
-  
-  //Show UID on serial monitor
+  //Show UID on serial monitor DEBUG
   Serial.print("UID tag :");
   String content= "";
   byte letter;
@@ -99,64 +201,42 @@ void loop()
    
   content.toUpperCase();
   
-  if (content.substring(1) == "17 A1 B6 60") //change here the UID of the card/cards that you want to give access
+  if (content.substring(1) == ("17 A1 B6 60")) //change here the UID of the card/cards that you want to give access
   {
     if(openClose == 0)//OPEN
     {
-      openClose = 1;
-      Serial.println("Access Granted");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Access Granted");
-      
-      delay(500);
-      tone(BUZZER, 500);
-      delay(300);
-      noTone(BUZZER);
-  
-      tone(BUZZER, 550);
-      delay(300);
-      noTone(BUZZER);
-    
-      Servo.write(180);
-      timeoutStart = millis();
-      //delay(5000);
-      //Servo.write(0);
+        lcdOpen();
+        validSound();
+        servoOpen();
+        
+        timeoutStart = millis();
+        EEPROM.write(0, timeoutStart/1000);
     }
     else//CLOSE
     {
-      openClose = 0;
-      Serial.println("Locking");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Locking");
-
-      delay(1000);
-      Servo.write(0);
-
-      Serial.println("Locked");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Locked");
-      delay(1000);
-
-      
+        lcdClose();
+        servoClose();
+        lcdLocked();
     }
-    
   }
- 
- else   {
-    Serial.println("No Access");
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Access Denied");
-    
-    tone(BUZZER, 300);
-    delay(300);
-    noTone(BUZZER);
+ else//invalid RFID key   
+ {
+    lcdInvalid();
+    invalidSound();
+  }
+}
 
-    tone(BUZZER, 200);
-    delay(300);
-    noTone(BUZZER);
-  }
-} 
+  
+void eeprom(){
+
+    lcd.clear();
+    lcd.print("Last Access");
+    lcd.setCursor(0,1);
+    lcd.print(EEPROM.read(0)/3600);
+    lcd.print("Hr ");
+    lcd.print((EEPROM.read(0)%3600)/60);
+    lcd.print("Min ");
+    lcd.print(EEPROM.read(0)%60);
+    lcd.print("Sec");
+
+}
