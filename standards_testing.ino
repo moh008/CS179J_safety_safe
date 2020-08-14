@@ -1,4 +1,3 @@
-
 /* For CS 179J - Safety Safe
  * Document Created: 8/11/2020 21:19:12 PM
  * Author : Ruth Navarrete
@@ -8,11 +7,11 @@
  *    hardcoding to test values and moving code to modularized functions
  *  1) create lightTimeout_test() in compliance with standard IEEE 29119-4 5.3.4
  *     08/11/2020 21:23:44 began
- *     08/--/2020 11:53:04 completed
- *  2) create correctPattern_test() in compliance with standard IEEE 29119-4 5.3.4
- *     08/11/2020 21:23:44 began
- *     08/--/2020 --:--:-- completed
- *  3) create wrongPattern_test() in compliance with standard IEEE 29119-4 5.3.4
+ *     08/12/2020 11:53:04 completed
+ *     08/14/2020 12:08:32 modified
+ *       - altered testing to output to Serial
+ *       - allow for clearer indication of result 
+ *  2) create pattern_test() in compliance with standard IEEE 29119-4 5.3.4
  *     08/11/2020 21:23:44 began
  *     08/--/2020 --:--:-- completed
  *     
@@ -60,17 +59,23 @@ void lightTimeout_test(int test_value) {
   }
   else {
     if(test_value) {// test_value represents (timeout >= (timeoutStart + 30000))
+      digitalWrite(LED, LOW); // moved for testing
       lcd.print("Close Safe");
       timeoutSound();
+      Serial.println("LOW"); // added for testing
+      Serial.println(); // added for testing
     }
     else {
+      digitalWrite(LED, HIGH); // moved for testing
       eeprom();
+      Serial.println("HIGH"); // added for testing
+      Serial.println(); // added for testing
     }
-    digitalWrite(LED, HIGH);
+    // digitalWrite(LED, HIGH); // removed for testing
   }
   delay(200);
 
-  RFID();
+  // RFID(); // removed for testing
 }
 
 // function to test pattern entry
@@ -93,7 +98,7 @@ void setup() {
   pinMode(BUZZER, OUTPUT);
   noTone(BUZZER);
 
-  //Debugg
+  //Debug
   Serial.println("Put your card to the reader...");
   Serial.println();
   
@@ -114,12 +119,14 @@ void setup() {
   lcd.print("Press button");
   lcd.setCursor(0, 1);
   lcd.print("Access | Record");
-
 }
 
 void loop() {
+  openClose = 1;
   lightTimeout_test(1);
+  delay(2500);
   lightTimeout_test(0);
+  delay(2500);
   
   pattern_test(1);
   pattern_test(0);
@@ -196,48 +203,49 @@ void lcdInvalid()
   lcd.print("Access Denied");
 }
 
-//RFID Function Module
+// RFID Function Module
 void RFID() {
   // Look for new cards
   if (!mfrc522.PICC_IsNewCardPresent()) {
     return;
   }
-
   // Select one of the cards
   if (!mfrc522.PICC_ReadCardSerial()) {
     return;
   }
 
-  //Show UID on serial monitor DEBUG
+  // Show UID on serial monitor DEBUG
   Serial.print("UID tag :");
   String content= "";
   byte letter;
   for (byte i = 0; i < mfrc522.uid.size; i++) {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
+    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+    Serial.print(mfrc522.uid.uidByte[i], HEX);
+    content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+    content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
+
   Serial.println();
   Serial.print("Result : ");
 
   content.toUpperCase();
 
-  if (content.substring(1) == ("17 A1 B6 60")) { //change here the UID of the card/cards that you want to give access
-    if(openClose == 0) { //OPEN
+  if (content.substring(1) == ("17 A1 B6 60")) { // change here the UID of the card/cards that you want to give access
+    if(openClose == 0) { // OPEN
       lcdOpen();
       validSound();
       servoOpen();
+
       timeoutStart = millis();
       EEPROM.write(0, timeoutStart/1000);
     }
-    else { //CLOSE
+    else { // CLOSE
       lcdClose();
       servoClose();
       lcdLocked();
     }
   }
-  else { //invalid RFID key
+  else { // invalid RFID key   
     lcdInvalid();
     invalidSound();
   }
