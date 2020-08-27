@@ -10,10 +10,7 @@
  *     08/12/2020 11:53:04 completed
  *     08/14/2020 12:08:32 modified
  *       - altered testing to output to Serial
- *       - allow for clearer indication of result 
- *  2) create pattern_test() in compliance with standard IEEE 29119-4 5.3.4
- *     08/11/2020 21:23:44 began
- *     08/--/2020 --:--:-- completed
+ *       - allow for clearer indication of result
  *     
  * References for IEEE 29119-4 5.3.4
  *   page 111 (hardcopy)/119 (electronic page number)
