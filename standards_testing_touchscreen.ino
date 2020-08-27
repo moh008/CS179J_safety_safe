@@ -5,7 +5,7 @@
  * Task Log:
  *  Minor modifications of hardcoding to test values
  *     and moving code to modularized functions
- *  1) create pattern_test() in compliance with standard IEEE 29119-4 5.3.4
+ *  1) create touchscreen test in compliance with standard IEEE 29119-4 5.3.4
  *     08/27/2020 13:49:24 began
  *     08/27/2020 13:54:49 completed
  *     
