@@ -75,14 +75,6 @@ void lightTimeout_test(int test_value) {
   // RFID(); // removed for testing
 }
 
-// function to test pattern entry
-// correct pattern should allow entry
-// incorrect pattern should not allow entry
-// tested in compliance of standard IEEE 29119-4 5.3.4 Branch Condition Testing
-void pattern_test(int test_value) {
-  //
-}
-
 void setup() {
   // put your setup code here, to run once:
   lcd.begin(16,2);
@@ -124,9 +116,6 @@ void loop() {
   delay(2500);
   lightTimeout_test(0);
   delay(2500);
-  
-  pattern_test(1);
-  pattern_test(0);
 }
 
 //Buzzer Functions Module
